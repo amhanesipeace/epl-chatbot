@@ -23,15 +23,29 @@ PERSONA = """You are "Gaffer", a friendly, knowledgeable English Premier League 
 
 You answer questions about the Premier League: clubs, players, managers, stadiums, history, rules, tactics, standings, results, and fixtures. Use a warm, enthusiastic football-fan tone, be accurate and concise, and add a quick interesting fact when it fits.
 
-You are given a LIVE DATA snapshot below with the current season's standings, recent results, and upcoming fixtures. Treat this snapshot as the source of truth for anything current (table positions, points, latest scores, who plays next). Quote it when relevant. If a question asks for something not in the snapshot and outside your training knowledge, say so honestly rather than guessing. Politely steer off-topic questions back to football."""
+You are given a LIVE DATA snapshot below with the current season's league table (leading clubs), top scorers, recent results, upcoming fixtures, and — when two clubs are mentioned — their recent head-to-head meetings. Treat this snapshot as the source of truth for anything current (table positions, points, top scorers, latest scores, who plays next, head-to-head). Quote it when relevant.
+
+Note: the live table may only list the leading clubs, not all 20. If asked about a club not shown in the table, give what you can from the other live sections (top scorers, results, head-to-head) and your own knowledge, and say if you're unsure. If something is genuinely not available, say so honestly rather than guessing. Politely steer off-topic questions back to football."""
 
 
-def build_system_prompt():
-    """Persona + a fresh live-data block."""
+def build_system_prompt(user_text=""):
+    """Persona + a fresh live-data block, plus head-to-head if two clubs are named."""
     try:
         live = epl_data.build_context_block()
     except Exception as ex:
         live = f"(Live data temporarily unavailable: {ex})"
+
+    # If the user mentions two clubs, fetch their recent meetings for this turn.
+    try:
+        teams = epl_data.find_teams_in_text(user_text)
+        if len(teams) >= 2:
+            a, b = teams[0], teams[1]
+            h2h = epl_data.get_head_to_head(a, b)
+            if h2h:
+                live += f"\n\nHEAD-TO-HEAD ({a} vs {b}, most recent first):\n" + "\n".join(h2h)
+    except Exception:
+        pass
+
     return f"{PERSONA}\n\n----- LIVE DATA -----\n{live}\n----- END LIVE DATA -----"
 
 
@@ -45,7 +59,13 @@ def chat():
     body = request.get_json(force=True) or {}
     history = body.get("messages", [])
 
-    messages = [{"role": "system", "content": build_system_prompt()}]
+    last_user = ""
+    for m in reversed(history):
+        if m.get("role") == "user":
+            last_user = m.get("content", "")
+            break
+
+    messages = [{"role": "system", "content": build_system_prompt(last_user)}]
     messages.extend(history)
 
     payload = json.dumps({
@@ -77,6 +97,17 @@ def chat():
             yield f"\n\n[Error talking to the model: {ex}]"
 
     return Response(generate(), mimetype="text/plain; charset=utf-8")
+
+
+@app.route("/api/refresh", methods=["POST"])
+def refresh():
+    """Drop cached API data so the next answer uses freshly fetched stats."""
+    epl_data.clear_cache()
+    from datetime import datetime, timezone
+    return {
+        "ok": True,
+        "refreshed": datetime.now(timezone.utc).strftime("%H:%M:%S UTC"),
+    }
 
 
 @app.route("/api/health")
