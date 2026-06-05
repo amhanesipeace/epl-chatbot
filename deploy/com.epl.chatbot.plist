@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.epl.chatbot</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Library/Frameworks/Python.framework/Versions/3.12/bin/python3</string>
+        <string>/Users/peaceamhanesi/epl-chatbot/app.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/peaceamhanesi/epl-chatbot</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/peaceamhanesi/epl-chatbot/logs/app.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/peaceamhanesi/epl-chatbot/logs/app.err</string>
+</dict>
+</plist>

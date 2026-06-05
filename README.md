@@ -57,6 +57,43 @@ ollama create epl-bot -f Modelfile
 ollama run epl-bot
 ```
 
+## Always-on deployment (macOS)
+
+Run the app + a public Cloudflare tunnel automatically at login, kept alive
+across crashes and reboots, using `launchd`:
+
+```bash
+cd ~/epl-chatbot
+deploy/install.sh        # registers the two LaunchAgents
+./show-url.sh            # prints the current public https URL
+```
+
+This launches:
+
+- **`com.epl.chatbot`** — the Flask app on `localhost:5050`
+- **`com.epl.tunnel`** — `cloudflared` exposing it to the internet
+
+Both have `KeepAlive` set, so macOS restarts them if they crash and relaunches
+them every time you log in. The app and model stay **on your Mac** — Cloudflare
+only forwards traffic — so the public link is live whenever your Mac is awake.
+
+Useful commands:
+
+```bash
+./show-url.sh                              # current public URL
+launchctl list | grep epl                  # are the agents running?
+tail -f logs/app.log logs/tunnel.log       # live logs
+deploy/uninstall.sh                        # stop & remove auto-start
+```
+
+> **Note:** the free "quick tunnel" URL changes on each restart. For a
+> permanent custom address, use a named Cloudflare tunnel (free Cloudflare
+> account + a domain). The `.plist` files use absolute paths for this machine;
+> adjust them if you move the project or run as a different user.
+>
+> Requires the **Ollama app** to be running (set it to "Open at Login" so the
+> model is available after a reboot).
+
 ## Configuration
 
 Environment variables (optional):
