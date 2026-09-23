@@ -178,6 +178,44 @@ def get_recent_results(limit=12):
     return [_fmt_event_result(e) for e in events[:limit]]
 
 
+def get_recent_results_structured(limit=20):
+    """Recent results as dicts (with scores) — for insight computation + UI."""
+    data = _get(f"{API}/eventspastleague.php?id={EPL_LEAGUE_ID}")
+    events = (data or {}).get("events") or []
+    out = []
+    for e in events[:limit]:
+        hs, as_ = e.get("intHomeScore"), e.get("intAwayScore")
+        if hs is None or as_ is None:
+            continue
+        try:
+            hs, as_ = int(hs), int(as_)
+        except (TypeError, ValueError):
+            continue
+        out.append({
+            "date": e.get("dateEvent") or (e.get("strTimestamp") or "")[:10],
+            "home": e.get("strHomeTeam"),
+            "away": e.get("strAwayTeam"),
+            "home_score": hs,
+            "away_score": as_,
+        })
+    return out
+
+
+def get_upcoming_fixtures_structured(limit=12):
+    """Upcoming fixtures as dicts — for the dashboard UI."""
+    data = _get(f"{API}/eventsnextleague.php?id={EPL_LEAGUE_ID}")
+    events = (data or {}).get("events") or []
+    out = []
+    for e in events[:limit]:
+        ts = e.get("strTimestamp") or e.get("dateEvent") or ""
+        out.append({
+            "when": ts[:16].replace("T", " "),
+            "home": e.get("strHomeTeam"),
+            "away": e.get("strAwayTeam"),
+        })
+    return out
+
+
 def get_upcoming_fixtures(limit=12):
     data = _get(f"{API}/eventsnextleague.php?id={EPL_LEAGUE_ID}")
     events = (data or {}).get("events") or []

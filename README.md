@@ -1,30 +1,45 @@
-# Gaffer — EPL Chatbot ⚽
+# Gaffer — EPL Insights Dashboard ⚽
 
-A friendly English Premier League chatbot that runs **fully locally** on
-[Ollama](https://ollama.com) (Meta's **Llama 3.1 8B**) and answers with
-**live, up-to-date data** — current standings, latest results, and upcoming
-fixtures — fetched from [TheSportsDB](https://www.thesportsdb.com).
+A live English Premier League **dashboard** that pulls standings, top scorers,
+results and fixtures from public sport APIs and **automatically surfaces
+insights** — turning raw data into story-ready headlines (title race, form,
+Golden Boot, biggest wins). A local-LLM chat assistant ("Ask Gaffer") is built
+in as a side panel.
 
 Created by Peace Amhanesi.
 
-- 🧠 **Local LLM** — Llama 3.1 via Ollama, no cloud, no API bills.
-- 📡 **Live data** — standings/results/fixtures injected into each answer (RAG-style).
-- 💬 **Web chat UI** — clean streaming chat in your browser.
+- 📊 **Auto insights** — a rules engine (`insights.py`) reads the live data and
+  writes narrative takes: title race, hottest/coldest form, best attack/defence,
+  Golden Boot race, statement results, goals-per-game pace.
+- 📈 **Live dashboard** — league table with colour-coded form, top scorers,
+  recent results and upcoming fixtures, all from live APIs.
+- 📡 **Data layer** — standings/results/fixtures from [TheSportsDB](https://www.thesportsdb.com);
+  top scorers from the official Fantasy Premier League API; cached 5 min.
+- 💬 **Ask Gaffer** — local LLM chat (Llama 3.1 via [Ollama](https://ollama.com))
+  grounded in the same live data (RAG-style). Optional; the dashboard works without it.
 - 🖥️ **Terminal version** — a custom `epl-bot` model via the `Modelfile`.
 
 ## How it works
 
 ```
-Browser chat  ──>  Flask (app.py)  ──>  Ollama  (llama3.1:8b)
-                        │
-                        └──>  epl_data.py  ──>  TheSportsDB (live standings/results/fixtures)
+                         ┌─>  insights.py  ──>  narrative insights ("stories")
+Browser (dashboard.html) │
+        │                └─>  epl_data.py  ──>  TheSportsDB + FPL API (live data)
+        │  GET /api/dashboard  ──>  Flask (app.py)  ──┘
+        │
+        └─ POST /api/chat  ──>  Flask  ──>  Ollama (llama3.1:8b), grounded in the live data
 ```
 
-On every message, `app.py` fetches a fresh snapshot of the league (cached 5 min),
-prepends it to the system prompt as a "LIVE DATA" block, then streams the model's
-reply token-by-token to the page. Because the live table is the source of truth,
-the bot answers current questions correctly even though the model's own training
-data is older.
+- **Dashboard** (`/`): the page calls `GET /api/dashboard`, which fetches live
+  standings, top scorers, results and fixtures (`epl_data.py`, cached 5 min),
+  runs the raw numbers through `insights.py`, and returns structured JSON. The
+  page renders the table, leaderboards, and the auto-insight cards.
+- **Chat** (`/chat`, or the side panel): each message is answered by a local LLM
+  with the same live data injected as a "LIVE DATA" block, so answers stay
+  current even though the model's training data is older.
+
+The insight layer is deliberately pure/O(n) and network-free (`insights.py`),
+so it is fast and easy to unit-test.
 
 ## Requirements
 
@@ -40,7 +55,8 @@ pip install -r requirements.txt      # first time only
 ./run.sh                             # or: python3 app.py
 ```
 
-Then open **http://localhost:5050** and start chatting. Try:
+Then open **http://localhost:5050** for the dashboard (the chat panel is on the
+same page; a full-screen chat lives at `/chat`). Try asking Gaffer:
 
 - "Show me the current table"
 - "Who's top of the league right now?"

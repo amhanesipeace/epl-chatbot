@@ -12,6 +12,7 @@ import urllib.request
 from flask import Flask, Response, request, send_from_directory
 
 import epl_data
+import insights
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 MODEL = os.environ.get("EPL_MODEL", "llama3.1:8b")
@@ -51,6 +52,11 @@ def build_system_prompt(user_text=""):
 
 @app.route("/")
 def index():
+    return send_from_directory(HERE, "dashboard.html")
+
+
+@app.route("/chat")
+def chat_page():
     return send_from_directory(HERE, "index.html")
 
 
@@ -97,6 +103,33 @@ def chat():
             yield f"\n\n[Error talking to the model: {ex}]"
 
     return Response(generate(), mimetype="text/plain; charset=utf-8")
+
+
+@app.route("/api/dashboard")
+def dashboard_data():
+    """Structured live data + auto-computed insights for the dashboard UI."""
+    from datetime import datetime, timezone
+
+    def safe(fn, default):
+        try:
+            return fn()
+        except Exception:
+            return default
+
+    standings = safe(lambda: epl_data.get_standings(), [])
+    scorers = safe(lambda: epl_data.get_top_scorers(), [])
+    results = safe(lambda: epl_data.get_recent_results_structured(), [])
+    fixtures = safe(lambda: epl_data.get_upcoming_fixtures_structured(), [])
+
+    return {
+        "season": epl_data.current_season(),
+        "fetched": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        "standings": standings,
+        "scorers": scorers,
+        "results": results,
+        "fixtures": fixtures,
+        "insights": insights.build_insights(standings, scorers, results),
+    }
 
 
 @app.route("/api/refresh", methods=["POST"])
