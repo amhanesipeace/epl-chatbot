@@ -59,6 +59,17 @@
   .live-match .team { font-weight:600; }
   .live-match .sc { font-variant-numeric:tabular-nums; font-weight:700; font-size:18px; }
   .live-match .min { color:var(--warn); font-size:12px; font-weight:600; margin-top:6px; }
+  /* Bar charts (pure CSS, no library) */
+  .charts { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .chart-row { display:grid; grid-template-columns:130px 1fr 44px; align-items:center;
+    gap:10px; margin:7px 0; font-size:13px; }
+  .chart-row .lbl { color:var(--text); white-space:nowrap; overflow:hidden;
+    text-overflow:ellipsis; }
+  .chart-row .track { display:block; background:var(--panel2); border-radius:6px; height:18px; overflow:hidden; }
+  .chart-row .fill { display:block; height:100%; border-radius:6px; transition:width .5s ease; }
+  .chart-row .val { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+  .chart-sub { color:var(--muted); font-size:12px; margin:-2px 0 10px; }
+  @media (max-width:880px){ .charts{ grid-template-columns:1fr; } }
   /* Chat */
   #chat { display:flex; flex-direction:column; height:420px; }
   #log { flex:1; overflow-y:auto; padding-right:6px; }
@@ -95,6 +106,23 @@
   <div class="card">
     <h2>📊 Auto Insights</h2>
     <div class="insights" id="insights"><span class="muted">Crunching the numbers…</span></div>
+  </div>
+
+  <!-- CHARTS: the numbers as a picture -->
+  <div class="card">
+    <h2>📈 Charts</h2>
+    <div class="charts">
+      <div>
+        <div style="font-weight:600;margin-bottom:2px">Title race — points</div>
+        <div class="chart-sub">Points per club (leading clubs)</div>
+        <div id="chart-points"><span class="muted">Loading…</span></div>
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:2px">Golden Boot race — goals</div>
+        <div class="chart-sub">Top scorers this season</div>
+        <div id="chart-goals"><span class="muted">Loading…</span></div>
+      </div>
+    </div>
   </div>
 
   <div class="grid">
@@ -141,6 +169,19 @@ function formHTML(form){
   return '<span class="form">' + [...form].map(c=>`<span class="${c}">${c}</span>`).join('') + '</span>';
 }
 
+// Horizontal bar chart from [{label, value}], scaled to the max value.
+function barChart(el, items, color){
+  if(!items.length){ el.innerHTML = '<span class="muted">No data yet.</span>'; return; }
+  const max = Math.max(...items.map(i=>i.value)) || 1;
+  el.innerHTML = items.map(i => {
+    const pct = Math.max(2, Math.round(i.value / max * 100));
+    return `<div class="chart-row">
+      <span class="lbl" title="${esc(i.label)}">${esc(i.label)}</span>
+      <span class="track"><span class="fill" style="width:${pct}%;background:${color}"></span></span>
+      <span class="val">${i.value}</span></div>`;
+  }).join('');
+}
+
 function renderLive(games, time){
   const card = $('#livecard');
   if(!games || !games.length){ card.style.display = 'none'; return; }
@@ -182,6 +223,14 @@ async function loadDashboard(){
       d.standings.map(s=>`<tr><td>${s.rank}</td><td>${esc(s.team)}</td><td class="r">${s.played}</td><td class="r">${s.win}-${s.draw}-${s.loss}</td><td class="r">${s.gd}</td><td class="r"><b>${s.points}</b></td><td>${formHTML(s.form)}</td></tr>`).join('') + '</tbody>';
     $('#tablenote').textContent = 'Note: the free data source may list only the leading clubs.';
   }
+
+  // Charts (the numbers as a picture)
+  barChart($('#chart-points'),
+    d.standings.map(s => ({label: s.team, value: s.points})),
+    'linear-gradient(90deg,#2ea043,#3fb950)');
+  barChart($('#chart-goals'),
+    d.scorers.slice(0, 8).map(s => ({label: s.name, value: s.goals})),
+    'linear-gradient(90deg,#bb8009,#e3b341)');
 
   // Scorers
   $('#scorers').innerHTML = '<thead><tr><th>#</th><th>Player</th><th class="r">G</th><th class="r">A</th></tr></thead><tbody>' +
