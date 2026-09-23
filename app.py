@@ -120,16 +120,30 @@ def dashboard_data():
     scorers = safe(lambda: epl_data.get_top_scorers(), [])
     results = safe(lambda: epl_data.get_recent_results_structured(), [])
     fixtures = safe(lambda: epl_data.get_upcoming_fixtures_structured(), [])
+    live = safe(lambda: epl_data.get_live_scores(), [])
 
     return {
         "season": epl_data.current_season(),
         "fetched": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        "live": live,
         "standings": standings,
         "scorers": scorers,
         "results": results,
         "fixtures": fixtures,
         "insights": insights.build_insights(standings, scorers, results),
     }
+
+
+@app.route("/api/live")
+def live_scores():
+    """Just the in-play matches — light endpoint the dashboard can poll often."""
+    from datetime import datetime, timezone
+    try:
+        live = epl_data.get_live_scores()
+    except Exception:
+        live = []
+    return {"live": live,
+            "fetched": datetime.now(timezone.utc).strftime("%H:%M:%S UTC")}
 
 
 @app.route("/api/refresh", methods=["POST"])

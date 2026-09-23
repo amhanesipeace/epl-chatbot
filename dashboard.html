@@ -46,6 +46,19 @@
   .muted { color:var(--muted); }
   .score { font-variant-numeric:tabular-nums; font-weight:600; }
   .note { color:var(--muted); font-size:12px; margin-top:8px; }
+  /* Live scores */
+  .live-head { display:flex; align-items:center; gap:8px; }
+  .live-dot { width:9px; height:9px; border-radius:50%; background:var(--warn);
+    box-shadow:0 0 0 0 rgba(248,81,73,.6); animation:pulse 1.6s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(248,81,73,.6);}
+    70%{box-shadow:0 0 0 8px rgba(248,81,73,0);} 100%{box-shadow:0 0 0 0 rgba(248,81,73,0);} }
+  .live-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+  .live-match { background:var(--panel2); border:1px solid var(--line);
+    border-radius:10px; padding:12px 14px; }
+  .live-match .teams { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .live-match .team { font-weight:600; }
+  .live-match .sc { font-variant-numeric:tabular-nums; font-weight:700; font-size:18px; }
+  .live-match .min { color:var(--warn); font-size:12px; font-weight:600; margin-top:6px; }
   /* Chat */
   #chat { display:flex; flex-direction:column; height:420px; }
   #log { flex:1; overflow-y:auto; padding-right:6px; }
@@ -71,6 +84,13 @@
 </header>
 
 <div class="container">
+  <!-- LIVE SCORES: hidden until at least one EPL match is in play -->
+  <div class="card" id="livecard" style="display:none; border-color:var(--warn)">
+    <h2 class="live-head"><span class="live-dot"></span> Live Now
+      <span class="muted" id="livetime" style="font-weight:400;text-transform:none;letter-spacing:0"></span></h2>
+    <div class="live-grid" id="live"></div>
+  </div>
+
   <!-- INSIGHTS: the 'raw data -> stories' layer, front and centre -->
   <div class="card">
     <h2>📊 Auto Insights</h2>
@@ -121,9 +141,35 @@ function formHTML(form){
   return '<span class="form">' + [...form].map(c=>`<span class="${c}">${c}</span>`).join('') + '</span>';
 }
 
+function renderLive(games, time){
+  const card = $('#livecard');
+  if(!games || !games.length){ card.style.display = 'none'; return; }
+  card.style.display = '';
+  if(time) $('#livetime').textContent = '· ' + time;
+  $('#live').innerHTML = games.map(g => {
+    const status = (g.status||'').toUpperCase();
+    // Show the minute while playing; show the status label at HT/FT etc.
+    const inPlay = !['FT','HT','NS','POSTP','PPD',''].includes(status);
+    const label = inPlay && g.minute ? `${g.minute}'` : (status || 'LIVE');
+    return `<div class="live-match">
+      <div class="teams"><span class="team">${esc(g.home)}</span>
+        <span class="sc">${esc(g.home_score)}–${esc(g.away_score)}</span>
+        <span class="team">${esc(g.away)}</span></div>
+      <div class="min">● ${esc(label)}</div></div>`;
+  }).join('');
+}
+
+async function pollLive(){
+  try {
+    const d = await (await fetch('/api/live')).json();
+    renderLive(d.live, d.fetched);
+  } catch(e){ /* keep last state on transient errors */ }
+}
+
 async function loadDashboard(){
   const d = await (await fetch('/api/dashboard')).json();
   $('#meta').textContent = `Season ${d.season} · updated ${d.fetched}`;
+  renderLive(d.live, d.fetched);
 
   // Insights
   $('#insights').innerHTML = d.insights.length
@@ -183,6 +229,8 @@ $('#chatform').onsubmit = async (e) => {
 };
 
 loadDashboard();
+// Poll live scores every 30s so in-play games update without a full reload.
+setInterval(pollLive, 30000);
 </script>
 </body>
 </html>

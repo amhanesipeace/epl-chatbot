@@ -201,6 +201,40 @@ def get_recent_results_structured(limit=20):
     return out
 
 
+def get_live_scores(league_id=EPL_LEAGUE_ID):
+    """In-play matches for a league (default EPL), as dicts.
+
+    Uses TheSportsDB's live-score feed (works on the free key). The league
+    filter (?l=) is unreliable, so we fetch the soccer feed and filter by
+    idLeague ourselves. Returns [] when no matches are live.
+
+    Each dict: home/away, home_score/away_score, status (e.g. '1H','HT','2H',
+    'FT'), minute (progress, e.g. '71'), updated.
+    """
+    # Not cached: live scores must be fresh. Endpoint is lightweight.
+    url = f"{API}/livescore.php?s=Soccer"
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "Mozilla/5.0 (epl-chatbot/1.0)"})
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+
+    games = (data or {}).get("livescore") or []
+    out = []
+    for g in games:
+        if str(g.get("idLeague")) != str(league_id):
+            continue
+        out.append({
+            "home": g.get("strHomeTeam"),
+            "away": g.get("strAwayTeam"),
+            "home_score": g.get("intHomeScore"),
+            "away_score": g.get("intAwayScore"),
+            "status": g.get("strStatus") or "",
+            "minute": g.get("strProgress") or "",
+            "updated": g.get("updated") or "",
+        })
+    return out
+
+
 def get_upcoming_fixtures_structured(limit=12):
     """Upcoming fixtures as dicts — for the dashboard UI."""
     data = _get(f"{API}/eventsnextleague.php?id={EPL_LEAGUE_ID}")

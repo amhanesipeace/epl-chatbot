@@ -13,6 +13,8 @@ Created by Peace Amhanesi.
 - 📊 **Auto insights** — a rules engine (`insights.py`) reads the live data and
   writes narrative takes: title race, hottest/coldest form, best attack/defence,
   Golden Boot race, statement results, goals-per-game pace.
+- 🔴 **Live in-play scores** — a "LIVE NOW" banner shows EPL matches as they
+  happen (score + minute), auto-polling every 30s; hidden when nothing is on.
 - 📈 **Live dashboard** — league table with colour-coded form, top scorers,
   recent results and upcoming fixtures, all from live APIs.
 - 📡 **Data layer** — standings/results/fixtures from [TheSportsDB](https://www.thesportsdb.com);
@@ -52,9 +54,10 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-22 tests cover every insight generator — both when it should fire and when it
-should stay quiet — plus the helpers and the `build_insights` integration. CI
-runs them on every push (see the badge above).
+26 tests cover every insight generator — both when it should fire and when it
+should stay quiet — plus the helpers, the `build_insights` integration, and the
+live-score parser (with the network call stubbed). CI runs them on every push
+(see the badge above).
 
 ## Requirements
 
