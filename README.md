@@ -1,5 +1,7 @@
 # Gaffer — EPL Insights Dashboard ⚽
 
+[![CI](https://github.com/amhanesipeace/epl-chatbot/actions/workflows/ci.yml/badge.svg)](https://github.com/amhanesipeace/epl-chatbot/actions/workflows/ci.yml)
+
 A live English Premier League **dashboard** that pulls standings, top scorers,
 results and fixtures from public sport APIs and **automatically surfaces
 insights** — turning raw data into story-ready headlines (title race, form,
@@ -40,6 +42,19 @@ Browser (dashboard.html) │
 
 The insight layer is deliberately pure/O(n) and network-free (`insights.py`),
 so it is fast and easy to unit-test.
+
+## Testing
+
+The insights engine is fully unit-tested (no network needed):
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+22 tests cover every insight generator — both when it should fire and when it
+should stay quiet — plus the helpers and the `build_insights` integration. CI
+runs them on every push (see the badge above).
 
 ## Requirements
 
