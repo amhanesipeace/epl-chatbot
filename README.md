@@ -12,8 +12,9 @@ Created by Peace Amhanesi.
 
 ![EPL Insights Dashboard — auto-insights, title-race and Golden-Boot charts, league table with form, and top scorers](docs/dashboard.png)
 
-> **▶️ Live demo:** _(deploying to Render — link coming; see [Deploy](#deploy-the-live-dashboard))._
-> The dashboard is fully live from public APIs; the "Ask Gaffer" chat runs locally (needs Ollama).
+> **▶️ Live demo:** **https://epl-dashboard-zah2.onrender.com**
+> (free tier; the first load may take ~30s while the server wakes up). The dashboard
+> is fully live from public APIs; the "Ask Gaffer" chat runs locally (needs Ollama).
 
 - 📊 **Auto insights** — a rules engine (`insights.py`) reads the live data and
   writes narrative takes: title race, hottest/coldest form, best attack/defence,
