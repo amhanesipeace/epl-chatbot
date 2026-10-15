@@ -10,6 +10,11 @@ in as a side panel.
 
 Created by Peace Amhanesi.
 
+![EPL Insights Dashboard — auto-insights, title-race and Golden-Boot charts, league table with form, and top scorers](docs/dashboard.png)
+
+> **▶️ Live demo:** _(deploying to Render — link coming; see [Deploy](#deploy-the-live-dashboard))._
+> The dashboard is fully live from public APIs; the "Ask Gaffer" chat runs locally (needs Ollama).
+
 - 📊 **Auto insights** — a rules engine (`insights.py`) reads the live data and
   writes narrative takes: title race, hottest/coldest form, best attack/defence,
   Golden Boot race, statement results, goals-per-game pace.
@@ -80,6 +85,21 @@ same page; a full-screen chat lives at `/chat`). Try asking Gaffer:
 - "Who's top of the league right now?"
 - "What were the latest results?"
 - "When does Arsenal play next?"
+
+## Deploy the live dashboard
+
+The dashboard needs no secrets (TheSportsDB's free key + the public FPL API), so
+it deploys as a standard Python web service. A [Render](https://render.com)
+blueprint is included (`render.yaml`): point Render at this repo as a **Blueprint**
+and it builds and starts automatically with:
+
+```
+gunicorn app:app --bind 0.0.0.0:$PORT
+```
+
+`CHAT_ENABLED=0` is set for hosted deploys, so the "Ask Gaffer" panel shows a
+"runs locally" note instead of erroring (the chat needs a local Ollama model).
+Everything else — standings, insights, charts, live scores — is fully functional.
 
 ## Terminal version (optional)
 

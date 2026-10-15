@@ -1,0 +1,16 @@
+# Render Blueprint for the EPL dashboard (live-data showcase).
+# The "Ask Gaffer" chat needs a local Ollama model, so CHAT_ENABLED=0 here;
+# the dashboard itself pulls from TheSportsDB (free key) + the public FPL API,
+# so it needs no secrets.
+services:
+  - type: web
+    name: epl-dashboard
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
+    envVars:
+      - key: CHAT_ENABLED
+        value: "0"
+      - key: PYTHON_VERSION
+        value: "3.12.4"

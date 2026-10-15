@@ -16,6 +16,10 @@ import insights
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 MODEL = os.environ.get("EPL_MODEL", "llama3.1:8b")
+# The "Ask Gaffer" chat needs a local Ollama model, so it's disabled on hosted
+# deploys (e.g. the Render demo) where no model is available. The live dashboard
+# works regardless. Set CHAT_ENABLED=0 to turn the chat off.
+CHAT_ENABLED = os.environ.get("CHAT_ENABLED", "1") != "0"
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__)
@@ -62,6 +66,12 @@ def chat_page():
 
 @app.route("/api/chat", methods=["POST"])
 def chat():
+    if not CHAT_ENABLED:
+        msg = ("Gaffer runs on a local Ollama model, so the chat is turned off "
+               "on this hosted demo. Clone the repo and run it locally to chat — "
+               "the live dashboard above works here fully.")
+        return Response(msg, mimetype="text/plain; charset=utf-8")
+
     body = request.get_json(force=True) or {}
     history = body.get("messages", [])
 
@@ -159,7 +169,8 @@ def refresh():
 
 @app.route("/api/health")
 def health():
-    return {"ok": True, "model": MODEL, "season": epl_data.current_season()}
+    return {"ok": True, "model": MODEL, "chat_enabled": CHAT_ENABLED,
+            "season": epl_data.current_season()}
 
 
 if __name__ == "__main__":

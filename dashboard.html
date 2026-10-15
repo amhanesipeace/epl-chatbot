@@ -254,6 +254,21 @@ $('#refresh').onclick = async () => {
   $('#refresh').textContent = '↻ Refresh';
 };
 
+// On hosted demos the chat is disabled (no local model); show a note instead.
+async function initChat(){
+  try {
+    const h = await (await fetch('/api/health')).json();
+    if(h && h.chat_enabled === false){
+      $('#log').innerHTML = '<div class="msg bot"><div class="bubble">💬 '
+        + '<b>Gaffer</b> runs on a local Ollama model, so the chat is off on this '
+        + 'hosted demo. Clone the repo to chat locally — the live dashboard above '
+        + 'is fully functional.</div></div>';
+      $('#q').disabled = true; $('#q').placeholder = 'Chat available in the local app';
+      $('#chatform').querySelector('button').disabled = true;
+    }
+  } catch(_){ /* leave chat enabled if health check fails */ }
+}
+
 // Chat (streams from the existing /api/chat endpoint)
 const history = [];
 $('#chatform').onsubmit = async (e) => {
@@ -277,6 +292,7 @@ $('#chatform').onsubmit = async (e) => {
   } catch(err){ botDiv.querySelector('.bubble').textContent = 'Error: '+err; }
 };
 
+initChat();
 loadDashboard();
 // Poll live scores every 30s so in-play games update without a full reload.
 setInterval(pollLive, 30000);
