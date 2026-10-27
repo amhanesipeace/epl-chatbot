@@ -41,6 +41,33 @@ def title_race(standings: list[dict]) -> dict | None:
     return {"title": title, "detail": detail}
 
 
+def european_race(standings: list[dict]) -> dict | None:
+    """The scrap for the final Champions League place (4th vs 5th).
+
+    Stays quiet when the top four looks settled, so the dashboard only tells the
+    story when it is a genuine race.
+    """
+    if len(standings) < 5:
+        return None
+    fourth, fifth = standings[3], standings[4]
+    gap = _int(fourth["points"]) - _int(fifth["points"])
+    if gap > 3:
+        return None  # top four looks settled — no story worth surfacing
+    if gap == 0:
+        return {
+            "title": "Scrap for the top four",
+            "detail": (f"{fourth['team']} and {fifth['team']} are level on "
+                       f"{_int(fourth['points'])} pts for the last Champions "
+                       "League place — split only by goal difference."),
+        }
+    return {
+        "title": "Race for the top four",
+        "detail": (f"{fourth['team']} cling to the final Champions League spot, "
+                   f"just {gap} point{'s' if gap != 1 else ''} ahead of "
+                   f"{fifth['team']}."),
+    }
+
+
 def in_form_team(standings: list[dict]) -> dict | None:
     """Best recent form (last ~5) — momentum, not season-long position."""
     ranked = [s for s in standings if s.get("form")]
@@ -146,6 +173,7 @@ def build_insights(standings, scorers, results) -> list[dict]:
     """Run every insight generator and return the ones that fired."""
     candidates = [
         title_race(standings),
+        european_race(standings),
         in_form_team(standings),
         struggling_team(standings),
         best_attack_defense(standings),

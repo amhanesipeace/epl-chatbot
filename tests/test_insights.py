@@ -66,6 +66,35 @@ def test_title_race_needs_two_teams():
     assert insights.title_race([]) is None
 
 
+# --- european_race ----------------------------------------------------------
+
+def _top5(p4, p5):
+    """A 5-team table where only the 4th/5th points matter for this insight."""
+    return [team(1, "City", 30), team(2, "Arsenal", 28), team(3, "Liverpool", 26),
+            team(4, "Villa", p4), team(5, "Spurs", p5)]
+
+
+def test_european_race_tight():
+    out = insights.european_race(_top5(24, 22))
+    assert out["title"] == "Race for the top four"
+    assert "Villa" in out["detail"] and "Spurs" in out["detail"]
+    assert "2 points" in out["detail"]
+
+
+def test_european_race_level():
+    out = insights.european_race(_top5(23, 23))
+    assert out["title"] == "Scrap for the top four"
+    assert "level" in out["detail"]
+
+
+def test_european_race_quiet_when_settled():
+    assert insights.european_race(_top5(24, 18)) is None   # 6-point gap
+
+
+def test_european_race_needs_five_teams():
+    assert insights.european_race([team(i, f"T{i}", 20) for i in range(1, 5)]) is None
+
+
 # --- in_form_team / struggling_team -----------------------------------------
 
 def test_in_form_team_fires_for_hot_streak():
