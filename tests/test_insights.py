@@ -95,6 +95,44 @@ def test_european_race_needs_five_teams():
     assert insights.european_race([team(i, f"T{i}", 20) for i in range(1, 5)]) is None
 
 
+# --- relegation_battle ------------------------------------------------------
+
+def _bottom(safe_pts, drop_pts):
+    """A 6-team table where only the last-safe (n-3) / first-dropped points matter.
+
+    With 6 teams the drop zone is the bottom three: index 3 (= standings[-4]) is
+    the last safe place, index 4 (= standings[-3]) the first team relegated.
+    """
+    return [team(1, "Top", 40), team(2, "Second", 38),
+            team(3, "Safe", safe_pts), team(4, "Drop", drop_pts),
+            team(5, "Weak", 8), team(6, "Bottom", 5)]
+
+
+def test_relegation_battle_tight():
+    out = insights.relegation_battle(_bottom(20, 18))
+    assert out["title"] == "Relegation battle"
+    assert "Drop" in out["detail"] and "Safe" in out["detail"]
+    assert "2 points" in out["detail"]
+
+
+def test_relegation_battle_level():
+    out = insights.relegation_battle(_bottom(19, 19))
+    assert out["title"] == "Relegation dogfight"
+    assert "level" in out["detail"]
+
+
+def test_relegation_battle_singular_point():
+    assert "1 point from" in insights.relegation_battle(_bottom(20, 19))["detail"]
+
+
+def test_relegation_battle_quiet_when_settled():
+    assert insights.relegation_battle(_bottom(24, 18)) is None   # 6-point cushion
+
+
+def test_relegation_battle_needs_enough_teams():
+    assert insights.relegation_battle([team(i, f"T{i}", 20) for i in range(1, 6)]) is None
+
+
 # --- in_form_team / struggling_team -----------------------------------------
 
 def test_in_form_team_fires_for_hot_streak():

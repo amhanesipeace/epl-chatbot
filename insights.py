@@ -100,6 +100,35 @@ def struggling_team(standings: list[dict]) -> dict | None:
     }
 
 
+def relegation_battle(standings: list[dict]) -> dict | None:
+    """The scrap just above the drop — last safe place (n-3) vs first relegated.
+
+    The mirror of :func:`european_race` at the bottom of the table: bottom three
+    go down, so the story is the points gap between the last safe side and the
+    team sitting just inside the relegation zone. Stays quiet when safety looks
+    settled, so the dashboard only surfaces a genuine fight.
+    """
+    if len(standings) < 6:
+        return None
+    safe, drop = standings[-4], standings[-3]
+    gap = _int(safe["points"]) - _int(drop["points"])
+    if gap > 3:
+        return None  # safety looks settled — no story worth surfacing
+    if gap == 0:
+        return {
+            "title": "Relegation dogfight",
+            "detail": (f"{drop['team']} and {safe['team']} are level on "
+                       f"{_int(drop['points'])} pts either side of the drop — "
+                       "separated only by goal difference."),
+        }
+    return {
+        "title": "Relegation battle",
+        "detail": (f"{drop['team']} sit in the relegation zone, just "
+                   f"{gap} point{'s' if gap != 1 else ''} from safety and "
+                   f"{safe['team']}."),
+    }
+
+
 def best_attack_defense(standings: list[dict]) -> dict | None:
     """Who scores most and who concedes least."""
     if not standings:
@@ -176,6 +205,7 @@ def build_insights(standings, scorers, results) -> list[dict]:
         european_race(standings),
         in_form_team(standings),
         struggling_team(standings),
+        relegation_battle(standings),
         best_attack_defense(standings),
         scorer_race(scorers),
         biggest_win(results),
