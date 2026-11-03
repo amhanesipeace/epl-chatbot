@@ -12,6 +12,7 @@ import urllib.request
 from flask import Flask, Response, request, send_from_directory
 
 import epl_data
+import export
 import insights
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
@@ -142,6 +143,22 @@ def dashboard_data():
         "fixtures": fixtures,
         "insights": insights.build_insights(standings, scorers, results),
     }
+
+
+@app.route("/api/standings.csv")
+def standings_csv():
+    """Download the current league table as CSV."""
+    try:
+        standings = epl_data.get_standings()
+    except Exception:
+        standings = []
+    season = epl_data.current_season()
+    body = export.standings_csv(standings)
+    return Response(
+        body, mimetype="text/csv",
+        headers={"Content-Disposition":
+                 f'attachment; filename="epl_standings_{season}.csv"'},
+    )
 
 
 @app.route("/api/live")
