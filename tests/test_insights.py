@@ -186,6 +186,47 @@ def test_scorer_race_quiet_when_no_goals():
     assert insights.scorer_race([]) is None
 
 
+# --- most_involvements ------------------------------------------------------
+
+def test_most_involvements_clear_leader():
+    # Haaland: 12+2=14; Saka: 8+4=12. Haaland leads involvements by 2.
+    sc = [scorer("Haaland", 12, "City", assists=2),
+          scorer("Saka", 8, "Arsenal", assists=4)]
+    out = insights.most_involvements(sc)
+    assert out["title"] == "Haaland most involved"
+    assert "14" in out["detail"] and "12 goals + 2 assists" in out["detail"]
+    assert "2 clear" in out["detail"]
+
+
+def test_most_involvements_highlights_a_creator_over_the_top_scorer():
+    # Top scorer is Haaland (14 goals), but Palmer has more involvements and is
+    # assist-heavy -> the insight should surface the creator.
+    sc = [scorer("Haaland", 14, "City", assists=1),
+          scorer("Palmer", 7, "Chelsea", assists=10)]
+    out = insights.most_involvements(sc)
+    assert out["title"] == "Palmer pulling the strings"
+    assert "17" in out["detail"] and "7 goals + 10 assists" in out["detail"]
+
+
+def test_most_involvements_deadlock():
+    sc = [scorer("A", 6, "X", assists=4), scorer("B", 5, "Y", assists=5)]
+    out = insights.most_involvements(sc)        # both on 10
+    assert out["title"] == "Involvements deadlock"
+    assert "level" in out["detail"]
+
+
+def test_most_involvements_singular_wording():
+    sc = [scorer("A", 1, "X", assists=1), scorer("B", 1, "Y", assists=0)]
+    detail = insights.most_involvements(sc)["detail"]
+    assert "1 goal + 1 assist" in detail        # singular, no trailing 's'
+
+
+def test_most_involvements_quiet_without_data():
+    assert insights.most_involvements([]) is None
+    assert insights.most_involvements([scorer("A", 0, assists=0)]) is None
+    assert insights.most_involvements([scorer("A", 5, assists=2)]) is None   # only one
+
+
 # --- biggest_win / goals_glut -----------------------------------------------
 
 def test_biggest_win_fires_on_big_margin():

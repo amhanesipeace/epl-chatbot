@@ -198,6 +198,46 @@ def scorer_race(scorers: list[dict]) -> dict | None:
     return {"title": title, "detail": detail}
 
 
+def most_involvements(scorers: list[dict]) -> dict | None:
+    """Most goal involvements (goals + assists) — the player shaping the most
+    goals, which the goals-only Golden Boot race can miss.
+
+    Ranks by involvements, then goals as a tiebreak. Points out when the leader
+    is a creator the scoring charts overlook (i.e. not the top scorer).
+    """
+    ranked = [s for s in scorers if (_int(s.get("goals")) + _int(s.get("assists")))]
+    if len(ranked) < 2:
+        return None
+    ranked.sort(key=lambda s: (_int(s.get("goals")) + _int(s.get("assists")),
+                               _int(s.get("goals"))), reverse=True)
+    leader = ranked[0]
+    g, a = _int(leader.get("goals")), _int(leader.get("assists"))
+    total = g + a
+    lead = total - (_int(ranked[1].get("goals")) + _int(ranked[1].get("assists")))
+    breakdown = f"{g} goal{'s' if g != 1 else ''} + {a} assist{'s' if a != 1 else ''}"
+
+    # Is the involvements leader a different player from the top scorer?
+    top_scorer = max(scorers, key=lambda s: _int(s.get("goals")))
+    if leader["name"] != top_scorer["name"] and a >= g:
+        return {
+            "title": f"{leader['name']} pulling the strings",
+            "detail": (f"{leader['team']}'s {leader['name']} has a hand in the most "
+                       f"goals — {total} involvements ({breakdown}), more than any "
+                       "out-and-out striker."),
+        }
+    if lead == 0:
+        return {
+            "title": "Involvements deadlock",
+            "detail": (f"{leader['name']} ({leader['team']}) tops goal involvements "
+                       f"on {total} ({breakdown}), level with the chasing pack."),
+        }
+    return {
+        "title": f"{leader['name']} most involved",
+        "detail": (f"{leader['name']} ({leader['team']}) leads for goal "
+                   f"involvements with {total} ({breakdown}), {lead} clear."),
+    }
+
+
 def build_insights(standings, scorers, results) -> list[dict]:
     """Run every insight generator and return the ones that fired."""
     candidates = [
@@ -208,6 +248,7 @@ def build_insights(standings, scorers, results) -> list[dict]:
         relegation_battle(standings),
         best_attack_defense(standings),
         scorer_race(scorers),
+        most_involvements(scorers),
         biggest_win(results),
         goals_glut(results),
     ]
