@@ -161,6 +161,22 @@ def standings_csv():
     )
 
 
+@app.route("/api/scorers.csv")
+def scorers_csv():
+    """Download the current top scorers as CSV."""
+    try:
+        scorers = epl_data.get_top_scorers()
+    except Exception:
+        scorers = []
+    season = epl_data.current_season()
+    body = export.scorers_csv(scorers)
+    return Response(
+        body, mimetype="text/csv",
+        headers={"Content-Disposition":
+                 f'attachment; filename="epl_scorers_{season}.csv"'},
+    )
+
+
 @app.route("/api/live")
 def live_scores():
     """Just the in-play matches — light endpoint the dashboard can poll often."""
