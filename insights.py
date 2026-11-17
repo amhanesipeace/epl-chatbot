@@ -84,6 +84,32 @@ def in_form_team(standings: list[dict]) -> dict | None:
     }
 
 
+def unbeaten_run(standings: list[dict]) -> dict | None:
+    """A side still unbeaten this season — a season-long resilience story.
+
+    Complements :func:`in_form_team` (which reads the last ~5 only): staying
+    unbeaten across the whole campaign is a different, rarer narrative. Requires
+    a meaningful number of games played so a one- or two-game start does not
+    count, and stays quiet once everyone has lost.
+    """
+    unbeaten = [s for s in standings
+                if _int(s.get("loss"), -1) == 0 and _int(s.get("played")) >= 5]
+    if not unbeaten:
+        return None
+    # The longest, most substantial run: most games, then points, then GD.
+    best = max(unbeaten, key=lambda s: (_int(s.get("played")),
+                                        _int(s.get("points")), _int(s.get("gd"))))
+    played = _int(best.get("played"))
+    won, drawn = _int(best.get("win")), _int(best.get("draw"))
+    record = f"{played} played, {won} won, {drawn} drawn"
+    top = bool(standings) and standings[0]["team"] == best["team"]
+    lead_in = "Leading the way and still" if top else "Still"
+    detail = f"{lead_in} to be beaten this season — {record}."
+    if len(unbeaten) == 1:
+        detail += " The only side yet to taste defeat."
+    return {"title": f"{best['team']} still unbeaten", "detail": detail}
+
+
 def struggling_team(standings: list[dict]) -> dict | None:
     """Worst recent form among the bottom half — a relegation story."""
     ranked = [s for s in standings if s.get("form")]
@@ -244,6 +270,7 @@ def build_insights(standings, scorers, results) -> list[dict]:
         title_race(standings),
         european_race(standings),
         in_form_team(standings),
+        unbeaten_run(standings),
         struggling_team(standings),
         relegation_battle(standings),
         best_attack_defense(standings),

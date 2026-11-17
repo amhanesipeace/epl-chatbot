@@ -157,6 +157,45 @@ def test_struggling_team_quiet_when_everyone_ok():
     assert insights.struggling_team(s) is None
 
 
+# --- unbeaten_run -----------------------------------------------------------
+
+def test_unbeaten_run_fires_for_lone_unbeaten_side():
+    s = [team(1, "City", 28, played=10, w=8, d=4, l=0),
+         team(2, "Arsenal", 24, played=10, w=7, d=3, l=2)]
+    out = insights.unbeaten_run(s)
+    assert out["title"] == "City still unbeaten"
+    assert "Leading the way" in out["detail"]        # also top of the table
+    assert "10 played, 8 won, 4 drawn" in out["detail"]
+    assert "only side yet to taste defeat" in out["detail"]
+
+
+def test_unbeaten_run_not_top_omits_lead_phrase():
+    s = [team(1, "City", 30, played=11, w=10, d=0, l=1),
+         team(2, "Arsenal", 26, played=10, w=8, d=2, l=0)]
+    out = insights.unbeaten_run(s)
+    assert out["title"] == "Arsenal still unbeaten"
+    assert out["detail"].startswith("Still to be beaten")
+
+
+def test_unbeaten_run_picks_longest_run_when_several():
+    s = [team(1, "City", 20, played=8, w=6, d=2, l=0),
+         team(2, "Arsenal", 24, played=10, w=7, d=3, l=0)]
+    out = insights.unbeaten_run(s)
+    assert "Arsenal" in out["title"]                 # more games played wins
+    assert "only side" not in out["detail"]          # two sides unbeaten
+
+
+def test_unbeaten_run_quiet_when_everyone_has_lost():
+    s = [team(1, "City", 18, played=8, w=6, d=0, l=2),
+         team(2, "Arsenal", 15, played=8, w=5, d=0, l=3)]
+    assert insights.unbeaten_run(s) is None
+
+
+def test_unbeaten_run_quiet_before_enough_games():
+    s = [team(1, "City", 9, played=3, w=3, d=0, l=0)]   # unbeaten but only 3 games
+    assert insights.unbeaten_run(s) is None
+
+
 # --- best_attack_defense ----------------------------------------------------
 
 def test_best_attack_defense():
