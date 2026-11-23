@@ -7,6 +7,9 @@ has no network calls, so it is fast and easy to test.
 """
 from __future__ import annotations
 
+# A Premier League season is 38 games — the basis for pace projections.
+SEASON_GAMES = 38
+
 
 def _int(v, default=0):
     try:
@@ -39,6 +42,38 @@ def title_race(standings: list[dict]) -> dict | None:
                   "opening a commanding gap.")
         title = f"{first['team']} pulling clear"
     return {"title": title, "detail": detail}
+
+
+def projected_pace(standings: list[dict]) -> dict | None:
+    """Where the leader's current pace lands them over a full 38-game season.
+
+    Every other table insight reads the standings as they are *now*; this one
+    looks forward, extrapolating the leader's points-per-game across the whole
+    campaign. It needs enough games for the rate to mean something and stays
+    quiet once the season is effectively complete (nothing left to project).
+    """
+    if not standings:
+        return None
+    leader = standings[0]
+    played = _int(leader.get("played"))
+    points = _int(leader.get("points"))
+    if played < 5 or played >= SEASON_GAMES:
+        return None  # too early to extrapolate, or no games left to project
+    ppg = points / played
+    projected = round(ppg * SEASON_GAMES)
+    # Historic EPL context: ~90+ usually wins the title, 100 is exceptional.
+    if projected >= 100:
+        note = " — a historic, record-chasing pace."
+    elif projected >= 90:
+        note = " — title-winning pace on recent history."
+    else:
+        note = "."
+    return {
+        "title": f"{leader['team']} on course for {projected} points",
+        "detail": (f"{leader['team']} are averaging {ppg:.2f} points a game from "
+                   f"{played} played — on track for about {projected} across the "
+                   f"{SEASON_GAMES}-game season{note}"),
+    }
 
 
 def european_race(standings: list[dict]) -> dict | None:
@@ -268,6 +303,7 @@ def build_insights(standings, scorers, results) -> list[dict]:
     """Run every insight generator and return the ones that fired."""
     candidates = [
         title_race(standings),
+        projected_pace(standings),
         european_race(standings),
         in_form_team(standings),
         unbeaten_run(standings),

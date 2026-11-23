@@ -17,8 +17,9 @@ Created by Peace Amhanesi.
 > is fully live from public APIs; the "Ask Gaffer" chat runs locally (needs Ollama).
 
 - 📊 **Auto insights** — a rules engine (`insights.py`) reads the live data and
-  writes narrative takes: title race, hottest/coldest form, best attack/defence,
-  Golden Boot race, statement results, goals-per-game pace.
+  writes narrative takes: title race, season points pace (projected over 38
+  games), hottest/coldest form, best attack/defence, Golden Boot race,
+  statement results, goals-per-game pace.
 - 🔴 **Live in-play scores** — a "LIVE NOW" banner shows EPL matches as they
   happen (score + minute), auto-polling every 30s; hidden when nothing is on.
 - 📈 **Live dashboard** — league table with colour-coded form, top scorers,
@@ -60,7 +61,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-26 tests cover every insight generator — both when it should fire and when it
+The tests cover every insight generator — both when it should fire and when it
 should stay quiet — plus the helpers, the `build_insights` integration, and the
 live-score parser (with the network call stubbed). CI runs them on every push
 (see the badge above).

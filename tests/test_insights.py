@@ -66,6 +66,42 @@ def test_title_race_needs_two_teams():
     assert insights.title_race([]) is None
 
 
+# --- projected_pace ---------------------------------------------------------
+
+def test_projected_pace_extrapolates_over_the_season():
+    # 30 pts from 12 played = 2.5 ppg -> 95 across 38 games.
+    out = insights.projected_pace([team(1, "City", 30, played=12)])
+    assert "95 points" in out["title"] and "City" in out["title"]
+    assert "2.50 points a game" in out["detail"]
+    assert "title-winning pace" in out["detail"]
+
+
+def test_projected_pace_flags_a_historic_rate():
+    # 34 pts from 12 played ~ 2.83 ppg -> 108 across 38 games.
+    out = insights.projected_pace([team(1, "City", 34, played=12)])
+    assert "historic" in out["detail"]
+
+
+def test_projected_pace_plain_when_pace_is_modest():
+    # 18 pts from 12 played = 1.5 ppg -> 57 across 38 games.
+    out = insights.projected_pace([team(1, "City", 18, played=12)])
+    assert "57 points" in out["title"]
+    assert "pace" not in out["detail"]            # no title/historic flourish
+    assert out["detail"].rstrip().endswith("season.")
+
+
+def test_projected_pace_quiet_before_enough_games():
+    assert insights.projected_pace([team(1, "City", 12, played=4)]) is None
+
+
+def test_projected_pace_quiet_when_season_complete():
+    assert insights.projected_pace([team(1, "City", 90, played=38)]) is None
+
+
+def test_projected_pace_needs_a_table():
+    assert insights.projected_pace([]) is None
+
+
 # --- european_race ----------------------------------------------------------
 
 def _top5(p4, p5):
