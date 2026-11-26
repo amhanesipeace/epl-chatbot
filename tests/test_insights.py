@@ -232,6 +232,48 @@ def test_unbeaten_run_quiet_before_enough_games():
     assert insights.unbeaten_run(s) is None
 
 
+# --- winless_run ------------------------------------------------------------
+
+def test_winless_run_fires_for_lone_winless_side():
+    s = [team(1, "City", 28, played=10, w=8, d=4, l=0),
+         team(20, "Sheffield", 3, played=10, w=0, d=3, l=7, gd=-18)]
+    out = insights.winless_run(s)
+    assert out["title"] == "Sheffield still winless"
+    assert "Rock bottom" in out["detail"]                # also last in the table
+    assert "10 played, 3 drawn, 7 lost" in out["detail"]
+    assert "last side yet to win a game" in out["detail"]
+
+
+def test_winless_run_not_bottom_omits_rock_bottom_phrase():
+    # A winless side that is not last (another team sits below on points).
+    s = [team(1, "City", 30, played=11, w=10, d=0, l=1),
+         team(19, "Burnley", 5, played=11, w=0, d=5, l=6, gd=-10),
+         team(20, "Luton", 4, played=11, w=1, d=1, l=9, gd=-20)]
+    out = insights.winless_run(s)
+    assert out["title"] == "Burnley still winless"
+    assert out["detail"].startswith("Still without a win")
+
+
+def test_winless_run_picks_longest_run_when_several():
+    s = [team(1, "City", 20, played=8, w=6, d=2, l=0),
+         team(19, "A", 4, played=8, w=0, d=4, l=4, gd=-6),
+         team(20, "B", 3, played=10, w=0, d=3, l=7, gd=-12)]
+    out = insights.winless_run(s)
+    assert "B" in out["title"]                            # more games played wins
+    assert "last side" not in out["detail"]               # two winless sides
+
+
+def test_winless_run_quiet_when_everyone_has_won():
+    s = [team(1, "City", 18, played=8, w=6, d=0, l=2),
+         team(2, "Arsenal", 9, played=8, w=3, d=0, l=5)]
+    assert insights.winless_run(s) is None
+
+
+def test_winless_run_quiet_before_enough_games():
+    s = [team(20, "City", 0, played=3, w=0, d=0, l=3)]    # winless but only 3 games
+    assert insights.winless_run(s) is None
+
+
 # --- best_attack_defense ----------------------------------------------------
 
 def test_best_attack_defense():

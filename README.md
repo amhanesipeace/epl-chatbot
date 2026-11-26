@@ -18,8 +18,8 @@ Created by Peace Amhanesi.
 
 - 📊 **Auto insights** — a rules engine (`insights.py`) reads the live data and
   writes narrative takes: title race, season points pace (projected over 38
-  games), hottest/coldest form, best attack/defence, Golden Boot race,
-  statement results, goals-per-game pace.
+  games), hottest/coldest form, unbeaten and winless runs, best attack/defence,
+  Golden Boot race, statement results, goals-per-game pace.
 - 🔴 **Live in-play scores** — a "LIVE NOW" banner shows EPL matches as they
   happen (score + minute), auto-polling every 30s; hidden when nothing is on.
 - 📈 **Live dashboard** — league table with colour-coded form, top scorers,

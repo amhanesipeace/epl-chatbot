@@ -161,6 +161,32 @@ def struggling_team(standings: list[dict]) -> dict | None:
     }
 
 
+def winless_run(standings: list[dict]) -> dict | None:
+    """A side still without a win this season — the mirror of :func:`unbeaten_run`.
+
+    Season-long, unlike :func:`struggling_team` (which reads the last ~5 games):
+    going a whole campaign without a win is its own, rarer story. Requires a
+    meaningful number of games played so a slow start does not count, and stays
+    quiet once every side has won at least once.
+    """
+    winless = [s for s in standings
+               if _int(s.get("win"), -1) == 0 and _int(s.get("played")) >= 5]
+    if not winless:
+        return None
+    # The longest, most troubling run: most games, then fewest points, then worst GD.
+    worst = max(winless, key=lambda s: (_int(s.get("played")),
+                                        -_int(s.get("points")), -_int(s.get("gd"))))
+    played = _int(worst.get("played"))
+    drawn, lost = _int(worst.get("draw")), _int(worst.get("loss"))
+    record = f"{played} played, {drawn} drawn, {lost} lost"
+    bottom = bool(standings) and standings[-1]["team"] == worst["team"]
+    lead_in = "Rock bottom and still" if bottom else "Still"
+    detail = f"{lead_in} without a win this season — {record}."
+    if len(winless) == 1:
+        detail += " The last side yet to win a game."
+    return {"title": f"{worst['team']} still winless", "detail": detail}
+
+
 def relegation_battle(standings: list[dict]) -> dict | None:
     """The scrap just above the drop — last safe place (n-3) vs first relegated.
 
@@ -308,6 +334,7 @@ def build_insights(standings, scorers, results) -> list[dict]:
         in_form_team(standings),
         unbeaten_run(standings),
         struggling_team(standings),
+        winless_run(standings),
         relegation_battle(standings),
         best_attack_defense(standings),
         scorer_race(scorers),
